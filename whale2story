@@ -121,6 +121,8 @@ class Whale2StoryConverter
       do_st(args)
     when 'MW.FC'
       do_mw_fc(args)
+    when 'CG'
+      do_cg(args)
     else
       warn "cmd=#{cmd} #{args.inspect}"
     end
@@ -234,44 +236,58 @@ class Whale2StoryConverter
 
   def do_st(args)
     raise "Expected 1..4 arguments, got #{args.inspect}" unless (args.length >= 1 and args.length <= 4)
-    fn, fade_dur, smth1, smth2 = args
+    spec, fade_dur, smth1, smth2 = args
 
-    # S002_1FA1BA_020A_L => st/001L/S001_1BA2AA_000B_L.png
-    sect = fn[1..3] + fn[-1]
-    f = "st/#{sect}/#{fn}"
-    add_file("#{f}.tlg")
+    f = sprite_spec_to_fn(spec)
 
     @out << {
       'op' => 'img',
       'layer' => 'spr',
-      'fn' => "arc0/#{f}.png",
+#      'fn' => "arc0/#{f}.png",
+      'fn' => "\##{f}",
 #      'x' => args.ofs_x,
 #      'y' => args.ofs_y,
     }
   end
 
   def do_mw_fc(args)
-    raise "Expected 0..1 argument, got #{args.inspect}" unless (args.length >= 0 and args.length <= 1)
+    raise "Expected 0..2 argument, got #{args.inspect}" unless (args.length >= 0 and args.length <= 2)
 
     if args.empty?
       @out << {
         'op' => 'img',
         'layer' => 'face',
+        'fn' => '',
       }
     else
-      x = args[0]
-      raise "Unable to parse MW.FC arg #{x.inspect}" unless x =~ /^S(...)_...(.).._(...)._(.)/
-      f = "st/#{$1}#{$4}/#{$2}_#{$3}"
-      add_file("#{f}.tlg")
-
+      f = sprite_spec_to_fn(args[0])
       @out << {
         'op' => 'img',
         'layer' => 'face',
-        'fn' => "arc0/#{f}.png",
+        'fn' => "\##{f}",
         'x' => 10,
         'y' => 300,
+        'z' => 10,
       }
     end
+  end
+
+  def do_cg(args)
+    layer, fn, smth1, smth2, smth3 = args
+    add_file("#{fn}.tlg")
+
+    @out << {
+      'op' => 'img',
+      'layer' => "cg#{layer}",
+      'fn' => "arc0/#{fn}.png",
+    }
+  end
+
+  def sprite_spec_to_fn(x)
+    raise "Unable to parse MW.FC arg #{x.inspect}" unless x =~ /^S(...)_...(.).._(...)._(.)/
+    f = "st/#{$1}#{$4}/#{$2}_#{$3}"
+    add_file("#{f}.tlg")
+    f
   end
 end
 
@@ -290,8 +306,9 @@ charmap = {
 
 fileset = Set.new
 
-cnv = Whale2StoryConverter.new('src/00126_42f8ab48bede0f7a.script', fileset)
+#cnv = Whale2StoryConverter.new('src/00126_42f8ab48bede0f7a.script', fileset)
 #cnv = Whale2StoryConverter.new('src/00128_acec7a59579bd19a.script', fileset)
+cnv = Whale2StoryConverter.new('src/00129_1c10820b01538175.script', fileset)
 #cnv = Whale2StoryConverter.new('src/00008_05c8f636f86c5526.script', fileset)
 #cnv = Whale2StoryConverter.new('src/00095_2b0fe2014d7a30a8.script', fileset)
 #cnv = Whale2StoryConverter.new('src/00137_8b107fda2143bf3f.script', fileset)

@@ -21,7 +21,9 @@ class Whale2StoryConverter
     # Calculate reverse map from character names to character IDs
     @orig_to_char = {}
     @chars.each_pair { |id, h|
-      @orig_to_char[h[@lang].mb_chars.downcase.to_s] = id
+      h.each_pair { |lang, val|
+        @orig_to_char[val.mb_chars.downcase.to_s] = id
+      }
     }
 
     @layers = Set.new
@@ -162,7 +164,7 @@ class Whale2StoryConverter
         'char' => ch_id,
         'txt' => {@lang => txt},
       }
-    when /^（(.*?)）$/
+    when /^（(.*?)）$/, /^\((.*?)\)$/
       txt = $1
       h = {
         'op' => 'think',
@@ -170,7 +172,6 @@ class Whale2StoryConverter
         'txt' => {@lang => txt},
       }
     else
-      txt = $1
       h = {
         'op' => 'say',
         'char' => ch_id,
@@ -342,16 +343,16 @@ fileset = Set.new
 #cnv = Whale2StoryConverter.new('src/00095_2b0fe2014d7a30a8.script', fileset)
 #cnv = Whale2StoryConverter.new('src/00137_8b107fda2143bf3f.script', fileset)
 
-if ARGV.size != 3
-  puts "Usage: whale2story <characters.yaml> <in.script> <out.story>"
+if ARGV.size != 4
+  puts "Usage: whale2story <characters.yaml> <orig_lang> <in.script> <out.story>"
   exit 0
 end
 
-charmap_fn, in_script, out_story = ARGV
+charmap_fn, lang, in_script, out_story = ARGV
 
 charmap = YAML.load(File.read(charmap_fn))
 
-cnv = Whale2StoryConverter.new(in_script, fileset, charmap, 'ja')
+cnv = Whale2StoryConverter.new(in_script, fileset, charmap, lang)
 cnv.run
 
 File.open(out_story, 'w') { |out|

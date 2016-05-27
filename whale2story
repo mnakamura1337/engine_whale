@@ -8,6 +8,7 @@ class Whale2StoryConverter
   def initialize(fn, fileset)
     @src = File.readlines(fn)
 
+    @lang = 'ja'
     @out = []
     @imgs = {}
     @chars = {}
@@ -30,7 +31,7 @@ class Whale2StoryConverter
           'ja' => 'ノラと皇女と野良猫ハート',
         },
         'vndb_id' => 18148,
-        'orig_lang' => 'ja',
+        'orig_lang' => @lang,
         'asset_path' => 'extracted_noratoto',
         'resolution' => {'w' => 960, 'h' => 540},
       },
@@ -133,14 +134,14 @@ class Whale2StoryConverter
   def do_narrate(txt)
     @out << {
       'op' => 'narrate',
-      'txt' => {'jp' => txt},
+      'txt' => {@lang => txt},
     }
     @out << {'op' => 'keypress'}
   end
 
   def do_say(ch, txt, voice = nil)
     ch_id = ch
-    @chars[ch_id] = {'name' => {'jp' => ch}}
+    @chars[ch_id] = {'name' => {@lang => ch}}
 
     case txt
     when /^「(.*?)」$/
@@ -148,14 +149,14 @@ class Whale2StoryConverter
       h = {
         'op' => 'say',
         'char' => ch_id,
-        'txt' => {'jp' => txt},
+        'txt' => {@lang => txt},
       }
     when /^（(.*?)）$/
       txt = $1
       h = {
         'op' => 'think',
         'char' => ch_id,
-        'txt' => {'jp' => txt},
+        'txt' => {@lang => txt},
       }
     else
       raise "Unable to parse brackets: #{txt.inspect}"

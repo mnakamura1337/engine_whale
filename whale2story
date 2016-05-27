@@ -3,15 +3,26 @@
 
 require 'json'
 require 'set'
+require 'yaml'
+
+# For mb_chars
+require 'active_support/core_ext/string'
+require 'active_support/multibyte'
 
 class Whale2StoryConverter
-  def initialize(fn, fileset)
+  def initialize(fn, fileset, chars, orig_lang)
     @src = File.readlines(fn)
 
-    @lang = 'ja'
+    @lang = orig_lang
     @out = []
     @imgs = {}
-    @chars = {}
+    @chars = chars
+
+    # Calculate reverse map from character names to character IDs
+    @orig_to_char = {}
+    @chars.each_pair { |id, h|
+      @orig_to_char[h[@lang].mb_chars.downcase.to_s] = id
+    }
 
     @layers = Set.new
     @supported_methods = Set.new(methods)
@@ -140,8 +151,8 @@ class Whale2StoryConverter
   end
 
   def do_say(ch, txt, voice = nil)
-    ch_id = ch
-    @chars[ch_id] = {'name' => {@lang => ch}}
+    ch_id = @orig_to_char[ch.mb_chars.downcase.to_s]
+    raise "Unable to map character name: #{ch.inspect}" unless ch_id
 
     case txt
     when /^「(.*?)」$/
@@ -159,7 +170,13 @@ class Whale2StoryConverter
         'txt' => {@lang => txt},
       }
     else
-      raise "Unable to parse brackets: #{txt.inspect}"
+      txt = $1
+      h = {
+        'op' => 'say',
+        'char' => ch_id,
+        'txt' => {@lang => txt},
+      }
+      #raise "Unable to parse brackets: #{txt.inspect}"
     end
 
     if voice
@@ -316,19 +333,6 @@ class Whale2StoryConverter
   end
 end
 
-charmap = {
-  'シャチ' => 'Shachi', # Yuuri Shachi 夕莉 シャチ
-  'ノブチナ' => 'Nobuchina', # Takada Nobuchina 高田 ノブチナ
-  'ノラ' => 'Nora',
-  'ノラの母@ナレーション' => 'Nora\'s Mother (Narration)',
-  'パトリシア' => 'Patricia',
-  '井田' => 'Ida',
-  '冥界の母' => 'Mother of the Underworld',
-  '明日原' => 'Asuhara', # Asuhara Yuuki 明日原 ユウキ
-  '機械' => 'Machine',
-  '田中ちゃん' => 'Tanaka-chan', # Tanaka-chan 田中ちゃん
-}
-
 fileset = Set.new
 
 #cnv = Whale2StoryConverter.new('src/00126_42f8ab48bede0f7a.script', fileset)
@@ -338,15 +342,19 @@ fileset = Set.new
 #cnv = Whale2StoryConverter.new('src/00095_2b0fe2014d7a30a8.script', fileset)
 #cnv = Whale2StoryConverter.new('src/00137_8b107fda2143bf3f.script', fileset)
 
-if ARGV.size != 2
-  puts "Usage: whale2story <in.script> <out.story>"
+if ARGV.size != 3
+  puts "Usage: whale2story <characters.yaml> <in.script> <out.story>"
   exit 0
 end
 
-cnv = Whale2StoryConverter.new(ARGV[0], fileset)
+charmap_fn, in_script, out_story = ARGV
+
+charmap = YAML.load(File.read(charmap_fn))
+
+cnv = Whale2StoryConverter.new(in_script, fileset, charmap, 'ja')
 cnv.run
 
-File.open(ARGV[1], 'w') { |out|
+File.open(out_story, 'w') { |out|
   out.print "program = "
   out.puts JSON.pretty_generate(cnv.out)
 }

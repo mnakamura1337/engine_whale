@@ -21,7 +21,7 @@ class Whale2StoryConverter
     # Calculate reverse map from character names to character IDs
     @orig_to_char = {}
     @chars.each_pair { |id, h|
-      h.each_pair { |lang, val|
+      h['name'].each_pair { |lang, val|
         @orig_to_char[val.mb_chars.downcase.to_s] = id
       }
     }

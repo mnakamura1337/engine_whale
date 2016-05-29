@@ -1,18 +1,10 @@
 #!/usr/bin/env ruby
-# coding: utf-8
 
 require_relative 'whale2storyconverter'
 
 require 'json'
 
 fileset = Set.new
-
-#cnv = Whale2StoryConverter.new('src/00126_42f8ab48bede0f7a.script', fileset)
-#cnv = Whale2StoryConverter.new('src/00128_acec7a59579bd19a.script', fileset)
-#cnv = Whale2StoryConverter.new('src/00129_1c10820b01538175.script', fileset)
-#cnv = Whale2StoryConverter.new('src/00008_05c8f636f86c5526.script', fileset)
-#cnv = Whale2StoryConverter.new('src/00095_2b0fe2014d7a30a8.script', fileset)
-#cnv = Whale2StoryConverter.new('src/00137_8b107fda2143bf3f.script', fileset)
 
 if ARGV.size != 4
   puts "Usage: whale2story <characters.yaml> <orig_lang> <in.script> <out.story>"
@@ -29,8 +21,4 @@ cnv.run
 File.open(out_story, 'w') { |out|
   out.print "program = "
   out.puts JSON.pretty_generate(cnv.out)
-}
-
-File.open('files-list', 'w') { |out|
-  fileset.to_a.sort.each { |fn| out.puts fn }
 }

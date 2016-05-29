@@ -17,12 +17,14 @@ class Whale2StoryConverter
     @chars = chars
 
     # Calculate reverse map from character names to character IDs
-    @orig_to_char = {}
-    @chars.each_pair { |id, h|
-      h['name'].each_pair { |lang, val|
-        @orig_to_char[val.mb_chars.downcase.to_s] = id
+    if @chars
+      @orig_to_char = {}
+      @chars.each_pair { |id, h|
+        h['name'].each_pair { |lang, val|
+          @orig_to_char[val.mb_chars.downcase.to_s] = id
+        }
       }
-    }
+    end
 
     @layers = Set.new
     @supported_methods = Set.new(methods)
@@ -151,8 +153,13 @@ class Whale2StoryConverter
   end
 
   def do_say(ch, txt, voice = nil)
-    ch_id = @orig_to_char[ch.mb_chars.downcase.to_s]
-    raise "Unable to map character name: #{ch.inspect}" unless ch_id
+    if @chars
+      ch_id = @orig_to_char[ch.mb_chars.downcase.to_s]
+      raise "Unable to map character name: #{ch.inspect}" unless ch_id
+    else
+      # Generate files list only mode, characters don't matter
+      ch_id = nil
+    end
 
     case txt
     when /^「(.*?)」$/

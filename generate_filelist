@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+require_relative 'whale2storyconverter'
+
+fileset = Set.new
+
+if ARGV.size != 2
+  puts "Usage: generate_filelist <in.script> <out.filelist>"
+  exit 0
+end
+
+in_script, out_filelist = ARGV
+
+cnv = Whale2StoryConverter.new(in_script, fileset, nil, 'ja')
+cnv.run
+
+File.open(out_filelist, 'w') { |out|
+  fileset.to_a.sort.each { |fn| out.puts fn }
+}

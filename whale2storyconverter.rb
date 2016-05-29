@@ -8,12 +8,12 @@ require 'active_support/core_ext/string'
 require 'active_support/multibyte'
 
 class Whale2StoryConverter
-  def initialize(fn, fileset, chars, orig_lang)
+  def initialize(fn, fileset, chars, orig_lang, imgs = {})
     @src = File.readlines(fn)
 
     @lang = orig_lang
     @out = []
-    @imgs = {}
+    @imgs = imgs
     @chars = chars
 
     # Calculate reverse map from character names to character IDs

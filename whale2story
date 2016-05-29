@@ -6,16 +6,17 @@ require 'json'
 
 fileset = Set.new
 
-if ARGV.size != 4
-  puts "Usage: whale2story <characters.yaml> <orig_lang> <in.script> <out.story>"
+if ARGV.size != 5
+  puts "Usage: whale2story <characters.yaml> <imgs.json> <orig_lang> <in.script> <out.story>"
   exit 0
 end
 
-charmap_fn, lang, in_script, out_story = ARGV
+charmap_fn, imgs_fn, lang, in_script, out_story = ARGV
 
 charmap = YAML.load(File.read(charmap_fn))
+imgs = JSON.load(File.read(imgs_fn))
 
-cnv = Whale2StoryConverter.new(in_script, fileset, charmap, lang)
+cnv = Whale2StoryConverter.new(in_script, fileset, charmap, lang, imgs)
 cnv.run
 
 File.open(out_story, 'w') { |out|

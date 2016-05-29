@@ -224,11 +224,12 @@ class Whale2StoryConverter
 
     f = "ev/#{fn}"
     add_file("#{f}.tlg")
+    img_fn_arg = lookup_composite_img(f)
 
     @out << {
       'op' => 'img',
       'layer' => 'bg',
-      'fn' => "arc0/#{f}.png",
+      'fn' => img_fn_arg,
 #      'x' => args.ofs_x,
 #      'y' => args.ofs_y,
     }
@@ -314,12 +315,14 @@ class Whale2StoryConverter
 
   def do_cg(args)
     layer, fn, smth1, smth2, smth3 = args
+
     add_file("#{fn}.tlg")
+    img_fn_arg = lookup_composite_img(fn)
 
     @out << {
       'op' => 'img',
       'layer' => "cg#{layer}",
-      'fn' => "arc0/#{fn}.png",
+      'fn' => img_fn_arg,
     }
   end
 
@@ -336,5 +339,13 @@ class Whale2StoryConverter
     f = "st/#{$1}#{$4}/#{$2}_#{$3}"
     add_file("#{f}.tlg")
     f
+  end
+
+  def lookup_composite_img(f)
+    if @imgs[f]
+      "\##{f}"
+    else
+      "arc0/#{f}.png"
+    end
   end
 end

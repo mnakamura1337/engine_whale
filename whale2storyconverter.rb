@@ -29,6 +29,8 @@ class Whale2StoryConverter
     @layers = Set.new
     @supported_methods = Set.new(methods)
     @files = fileset
+
+    @cg_layers = Set.new
   end
 
   def add_file(fn)
@@ -139,6 +141,8 @@ class Whale2StoryConverter
       do_mw_fc(args)
     when 'CG'
       do_cg(args)
+    when 'CG.DEL'
+      do_cg_del(args)
     else
       warn "cmd=#{cmd} #{args.inspect}"
     end
@@ -323,6 +327,30 @@ class Whale2StoryConverter
       'op' => 'img',
       'layer' => "cg#{layer}",
       'fn' => img_fn_arg,
+    }
+
+    @cg_layers << layer
+  end
+
+  # ["002", "500", "300"]
+  def do_cg_del(args)
+    expect_args(args, 0, 2)
+    layer, smth1 = args
+
+    if layer.nil?
+      @cg_layers.each { |l| del_cg_layer(l) }
+      @cg_layers = Set.new
+    else
+      del_cg_layer(layer)
+      @cg_layers.delete(layer)
+    end
+  end
+
+  def del_cg_layer(layer)
+    @out << {
+      'op' => 'img',
+      'layer' => "cg#{layer}",
+      'fn' => '',
     }
   end
 

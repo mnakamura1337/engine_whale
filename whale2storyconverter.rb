@@ -321,8 +321,8 @@ class Whale2StoryConverter
         'op' => 'img',
         'layer' => 'face',
         'fn' => "\##{f}",
-        'x' => 10,
-        'y' => 300,
+        'x' => -160,
+        'y' => 350,
         'z' => 10,
       }
     end

@@ -143,6 +143,8 @@ class Whale2StoryConverter
       do_cg(args)
     when 'CG.DEL'
       do_cg_del(args)
+    when 'CG.DF'
+      do_cg_df(args)
     else
       warn "cmd=#{cmd} #{args.inspect}"
     end
@@ -352,6 +354,39 @@ class Whale2StoryConverter
       'layer' => "cg#{layer}",
       'fn' => '',
     }
+  end
+
+  # [8, 3, 10@10, 500]
+  def do_cg_df(args)
+    expect_args(args, 2, 4)
+    layer, fx_mode, fx_args, time = args
+
+    # fx_modes:
+    # 0 = gray/colorize
+    # 1 = gray
+    # 2 = negative
+    # 3 = blur
+    # 4 = mosaic
+    # 5 = hsl
+    # only 3 is used in noratoto
+
+    raise "Unable to parse fx_args: #{fx_args.inspect}" unless fx_args =~ /^(\d+)@(\d+)$/
+    raise "Non-symmetric fx_args: #{fx_args.inspect}" unless $1 == $2
+    fx_amount = $1.to_i
+
+    h = {
+      'layer' => "cg#{layer}",
+      'fx' => {'blur' => fx_amount},
+    }
+
+    if time
+      h['op'] = 'anim'
+      h['t'] = time
+    else
+      h['op'] = 'img'
+    end
+
+    @out << h
   end
 
   def expect_args(args, lim1, lim2 = nil)

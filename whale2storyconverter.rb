@@ -207,6 +207,10 @@ class Whale2StoryConverter
     raise "Expected 1..3 arguments, got #{args.inspect}" unless (args.length >= 1 and args.length <= 3)
     fn, fade_dur, fade_type = args
 
+    # BG command seems to clear everything: sprites, faces, CGs, etc
+    @out << {'op' => 'clear'}
+    @cg_layers = Set.new
+
     f = "bg/#{fn}"
     add_file("#{f}.tlg")
 
@@ -294,6 +298,11 @@ class Whale2StoryConverter
       'layer' => 'spr',
       'fn' => '',
     }
+    @out << {
+      'op' => 'img',
+      'layer' => 'face',
+      'fn' => '',
+    }
   end
 
   def do_mw_fc(args)
@@ -319,8 +328,10 @@ class Whale2StoryConverter
     end
   end
 
+  # CG 8, cg/エロ本_ノラ, 500, 480@190
   def do_cg(args)
-    layer, fn, smth1, smth2, smth3 = args
+    expect_args(args, 2, 5)
+    layer, fn, time, coords, smth3 = args
 
     add_file("#{fn}.tlg")
     img_fn_arg = lookup_composite_img(fn)

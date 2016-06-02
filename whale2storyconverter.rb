@@ -13,7 +13,8 @@ class Whale2StoryConverter
 
     @lang = orig_lang
     @out = []
-    @imgs = imgs
+    @imgs_src = imgs
+    @imgs = {}
     @chars = chars
 
     # Calculate reverse map from character names to character IDs
@@ -26,11 +27,11 @@ class Whale2StoryConverter
       }
     end
 
-    @layers = Set.new
     @supported_methods = Set.new(methods)
     @files = fileset
 
     @cg_layers = Set.new
+    @sprite = nil
   end
 
   def add_file(fn)
@@ -271,21 +272,52 @@ class Whale2StoryConverter
     end
   end
 
+  # ST S002_1FA1AA_121A_M, 500, 750@@@1, 1000
   def do_st(args)
     expect_args(args, 1, 5)
-    spec, fade_dur, smth1, smth2, smth3 = args
+    spec, time, coords, prev_coords, smth3 = args
 
-    f = sprite_spec_to_fn(spec)
+    f = sprite_composite(spec)
+    tx, ty = parse_coord_spec(coords)
+    time = time.to_i
 
-    @out << {
-      'op' => 'img',
+    if prev_coords
+      sx, sy = parse_coord_spec(prev_coords)
+      @out << {
+        'op' => 'img',
+        'layer' => 'spr',
+        'fn' => f,
+        'x' => sx,
+        'y' => sy,
+        'z' => 7,
+      }
+      @sprite = {x: sx, y: sy}
+    end
+
+    h = {
       'layer' => 'spr',
-#      'fn' => "arc0/#{f}.png",
-      'fn' => "\##{f}",
-#      'x' => args.ofs_x,
-#      'y' => args.ofs_y,
+      'fn' => f,
+      'x' => tx,
+      'y' => ty,
       'z' => 7,
     }
+
+    if @sprite
+      h['op'] = 'anim'
+      h['t'] = time
+    else
+      h['op'] = 'img'
+      # TODO: process fade-ins if time is given
+    end
+    @out << h
+    @sprite = {x: tx, y: ty}
+  end
+
+  def parse_coord_spec(coords)
+    x, y, t3, t4 = (coords || '').split(/@/).map { |x| x.empty? ? nil : x }
+    x = x.to_i || 480
+    y = y.to_i || 270
+    [x, y]
   end
 
   # ["002", "500", "300"]
@@ -303,6 +335,7 @@ class Whale2StoryConverter
       'layer' => 'face',
       'fn' => '',
     }
+    @sprite = nil
   end
 
   def do_mw_fc(args)
@@ -316,21 +349,22 @@ class Whale2StoryConverter
       }
     else
       fn, smth1, smth2 = args
-      f = sprite_spec_to_fn(fn)
+      f = sprite_composite(fn)
       @out << {
         'op' => 'img',
         'layer' => 'face',
-        'fn' => "\##{f}",
-        'x' => -160,
-        'y' => 350,
+        'fn' => f,
+        'x' => 90,
+        'y' => 650,
         'z' => 10,
       }
     end
   end
 
   # CG 8, cg/エロ本_ノラ, 500, 480@190
+  # CG ["5", "bg/BLACK@@0", "1", "160@270@128@9", "", "0@0@100@100"]
   def do_cg(args)
-    expect_args(args, 2, 5)
+    expect_args(args, 2, 6)
     layer, fn, time, coords, smth3 = args
 
     add_file("#{fn}.tlg")
@@ -409,14 +443,59 @@ class Whale2StoryConverter
   end
 
   def sprite_spec_to_fn(x)
-    raise "Unable to parse MW.FC arg #{x.inspect}" unless x =~ /^S(...)_...(.).._(...)._(.)/
-    f = "st/#{$1}#{$4}/#{$2}_#{$3}"
-    add_file("#{f}.tlg")
-    f
+    raise "Unable to parse sprite arg #{x.inspect}" unless x =~ /^S(...)_(...(.)..)_(...)(.)_(.)/
+
+    char = $1
+    body_spec = $2
+    pose_spec = $3
+    emote = $4
+    emote_tail = $5 # usually blush
+    size_spec = $6
+
+    f_face = "st/#{char}#{size_spec}/#{pose_spec}_#{emote}"
+    f_body = "st/#{char}#{size_spec}/S#{char}_#{body_spec}_000#{emote_tail}_#{size_spec}"
+
+    add_file("#{f_face}.tlg")
+    add_file("#{f_body}.tlg")
+
+    [f_face, f_body]
+  end
+
+  def sprite_composite(x)
+    f_face, f_body = sprite_spec_to_fn(x)
+
+    # Just return some void stuff, if we're running without imgs_src,
+    # i.e. in file list generation mode
+    return '' if @imgs_src.empty?
+
+    if @imgs_src[f_face]
+      csrc = @imgs_src[f_face]
+      face_step = csrc['imgs'][1]
+      @imgs[x] = {
+        'ox' => csrc['ox'],
+        'oy' => csrc['oy'],
+        'imgs' => [
+          {
+            'fn' => "arc0/#{f_body}.png",
+            'px' => 0,
+            'py' => 0,
+          },
+          {
+            'fn' => face_step['fn'],
+            'px' => face_step['px'],
+            'py' => face_step['py'],
+          },
+        ],
+      }
+      "\##{x}"
+    else
+      raise "Unable to find composite img src: #{f_face.inspect} for #{x.inspect}"
+    end
   end
 
   def lookup_composite_img(f)
-    if @imgs[f]
+    if @imgs_src[f]
+      @imgs[f] = @imgs_src[f]
       "\##{f}"
     else
       "arc0/#{f}.png"

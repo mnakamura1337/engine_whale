@@ -315,8 +315,8 @@ class Whale2StoryConverter
 
   def parse_coord_spec(coords)
     x, y, t3, t4 = (coords || '').split(/@/).map { |x| x.empty? ? nil : x }
-    x = x.to_i || 480
-    y = y.to_i || 270
+    x = x ? x.to_i : 480
+    y = y ? y.to_i : 270
     [x, y]
   end
 

@@ -350,7 +350,7 @@ class Whale2StoryConverter
     else
       fn, smth1, smth2 = args
       f = sprite_composite(fn)
-      @out << {
+      h = {
         'op' => 'img',
         'layer' => 'face',
         'fn' => f,
@@ -358,6 +358,12 @@ class Whale2StoryConverter
         'y' => 650,
         'z' => 10,
       }
+      if f[0] != '#'
+        # just a normal 180x180 image, specify top left corner
+        h['x'] = 0
+        h['y'] = 360
+      end
+      @out << h
     end
   end
 
@@ -489,7 +495,10 @@ class Whale2StoryConverter
       }
       "\##{x}"
     else
-      raise "Unable to find composite img src: #{f_face.inspect} for #{x.inspect}"
+      raise "Unable to find composite img src: #{f_face.inspect} for #{x.inspect}" unless x =~ /S$/
+
+      # This is probably normal, single layer TLG6 image, face-sized = 180x180
+      "arc0/#{f_face}.png"
     end
   end
 

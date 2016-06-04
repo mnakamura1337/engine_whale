@@ -379,10 +379,10 @@ class Whale2StoryConverter
     @cg_layers << layer
   end
 
-  # ["002", "500", "300"]
+  # ["3", "600", "@600"]
   def do_cg_del(args)
-    expect_args(args, 0, 2)
-    layer, smth1 = args
+    expect_args(args, 0, 3)
+    layer, smth1, smth2 = args
 
     if layer.nil?
       @cg_layers.each { |l| del_cg_layer(l) }

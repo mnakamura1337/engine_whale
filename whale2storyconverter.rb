@@ -146,6 +146,8 @@ class Whale2StoryConverter
       do_cg_del(args)
     when 'CG.DF'
       do_cg_df(args)
+    when 'SE0'
+      do_se0(args)
     else
       warn "cmd=#{cmd} #{args.inspect}"
     end
@@ -373,14 +375,31 @@ class Whale2StoryConverter
     expect_args(args, 2, 6)
     layer, fn, time, coords, smth3 = args
 
+    tx, ty = parse_coord_spec(coords)
+
     add_file("#{fn}.tlg")
     img_fn_arg = lookup_composite_img(fn)
 
-    @out << {
+    h = {
       'op' => 'img',
       'layer' => "cg#{layer}",
       'fn' => img_fn_arg,
+      'x' => tx,
+      'y' => ty,
     }
+
+    if time and time.to_i > 1
+      h['a'] = 0
+      @out << h
+      @out << {
+        'op' => 'anim',
+        'layer' => "cg#{layer}",
+        'a' => 1,
+        't' => time.to_i,
+      }
+    else
+      @out << h
+    end
 
     @cg_layers << layer
   end
@@ -440,6 +459,26 @@ class Whale2StoryConverter
     @out << h
   end
 
+  # SE0 SE_031, 0, 100, 1
+  # SE0 SE_011_2, 0, 70, 1
+  # SE0, 1000
+  # SE0
+  def do_se0(args)
+    expect_args(args, 0, 4)
+    fn, t_wt, vol, smth1 = args
+
+    if fn and not fn.empty?
+      f = "se/#{fn}.ogg"
+      add_file(f)
+
+      @out << {
+        'op' => 'sound_play',
+        'channel' => 0,
+        'fn' => "arc0/#{f}",
+      }
+    end
+  end
+
   def expect_args(args, lim1, lim2 = nil)
     if lim2.nil?
       raise "Expected #{lim1} argument, got #{args.inspect}" unless args.length == lim1
@@ -477,22 +516,28 @@ class Whale2StoryConverter
     if @imgs_src[f_face]
       csrc = @imgs_src[f_face]
       face_step = csrc['imgs'][1]
-      @imgs[x] = {
-        'ox' => csrc['ox'],
-        'oy' => csrc['oy'],
-        'imgs' => [
-          {
-            'fn' => "arc0/#{f_body}.png",
-            'px' => 0,
-            'py' => 0,
-          },
-          {
-            'fn' => face_step['fn'],
-            'px' => face_step['px'],
-            'py' => face_step['py'],
-          },
-        ],
-      }
+
+      if face_step
+        @imgs[x] = {
+          'ox' => csrc['ox'],
+          'oy' => csrc['oy'],
+          'imgs' => [
+            {
+              'fn' => "arc0/#{f_body}.png",
+              'px' => 0,
+              'py' => 0,
+            },
+            {
+              'fn' => face_step['fn'],
+              'px' => face_step['px'],
+              'py' => face_step['py'],
+            },
+          ],
+        }
+      else
+        warn "compositing #{x.inspect}, no face step found"
+        @imgs[x] = csrc
+      end
       "\##{x}"
     else
       raise "Unable to find composite img src: #{f_face.inspect} for #{x.inspect}" unless x =~ /S$/

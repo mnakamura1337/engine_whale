@@ -358,7 +358,7 @@ class Whale2StoryConverter
         'fn' => f,
         'x' => 90,
         'y' => 650,
-        'z' => 10,
+        'z' => 1010,
       }
       if f[0] != '#'
         # just a normal 180x180 image, specify top left corner

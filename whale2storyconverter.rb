@@ -440,9 +440,16 @@ class Whale2StoryConverter
     # 5 = hsl
     # only 3 is used in noratoto
 
-    raise "Unable to parse fx_args: #{fx_args.inspect}" unless fx_args =~ /^(\d+)@(\d+)$/
-    raise "Non-symmetric fx_args: #{fx_args.inspect}" unless $1 == $2
-    fx_amount = $1.to_i
+    raise "Only blur is supported, but #{args.inspect} requested" unless fx_mode == '3'
+
+    if fx_args == '0'
+      # some weird blur reset
+      fx_amount = 0
+    else
+      raise "Unable to parse fx_args: #{fx_args.inspect} in #{args.inspect}" unless fx_args =~ /^(\d+)@(\d+)$/
+      raise "Non-symmetric fx_args: #{fx_args.inspect}" unless $1 == $2
+      fx_amount = $1.to_i
+    end
 
     h = {
       'layer' => "cg#{layer}",
